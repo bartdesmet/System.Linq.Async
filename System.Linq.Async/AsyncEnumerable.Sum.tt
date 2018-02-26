@@ -1,0 +1,151 @@
+﻿<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ output extension=".cs" #>
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace System.Linq.Async
+{
+    public static partial class AsyncEnumerable
+    {
+<#
+foreach (var t in new[]
+{
+    new { SourceType = "int", ResultType = "int", AccumulatorType = "int", Zero = "0", Checked = true },
+    new { SourceType = "long", ResultType = "long", AccumulatorType = "long", Zero = "0L", Checked = true },
+    new { SourceType = "float", ResultType = "float", AccumulatorType = "double", Zero = "0.0", Checked = false },
+    new { SourceType = "double", ResultType = "double", AccumulatorType = "double", Zero = "0.0", Checked = false },
+    new { SourceType = "decimal", ResultType = "decimal", AccumulatorType = "decimal", Zero = "0.0m", Checked = false },
+})
+{
+#>
+        public static Task<<#=t.ResultType#>> SumAsync(this IAsyncEnumerable<<#=t.SourceType#>> source, CancellationToken token = default)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+
+            return Core();
+
+            async Task<<#=t.ResultType#>> Core()
+            {
+                token.ThrowIfCancellationRequested();
+
+                <#=t.AccumulatorType#> sum = <#=t.Zero#>;
+
+<#
+if (t.Checked)
+{
+#>
+                checked
+                {
+                    foreach await (var item in source.ConfigureAwait(false))
+                    {
+                        token.ThrowIfCancellationRequested();
+
+                        sum += item;
+                    }
+                }
+<#
+}
+else
+{
+#>
+                foreach await (var item in source.ConfigureAwait(false))
+                {
+                    token.ThrowIfCancellationRequested();
+
+                    sum += item;
+                }
+<#
+}
+#>
+
+                return <#= t.ResultType != t.AccumulatorType ? "(" + t.ResultType + ")" : ""#>sum;
+            }
+        }
+
+<#
+}
+#>
+<#
+foreach (var t in new[]
+{
+    new { SourceType = "int", ResultType = "int", AccumulatorType = "int", Zero = "0", Checked = true },
+    new { SourceType = "long", ResultType = "long", AccumulatorType = "long", Zero = "0L", Checked = true },
+    new { SourceType = "float", ResultType = "float", AccumulatorType = "double", Zero = "0.0", Checked = false },
+    new { SourceType = "double", ResultType = "double", AccumulatorType = "double", Zero = "0.0", Checked = false },
+    new { SourceType = "decimal", ResultType = "decimal", AccumulatorType = "decimal", Zero = "0.0m", Checked = false },
+})
+{
+#>
+        public static Task<<#=t.ResultType#>?> SumAsync(this IAsyncEnumerable<<#=t.SourceType#>?> source, CancellationToken token = default)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+
+            return Core();
+
+            async Task<<#=t.ResultType#>?> Core()
+            {
+                token.ThrowIfCancellationRequested();
+
+                <#=t.AccumulatorType#> sum = <#=t.Zero#>;
+
+<#
+if (t.Checked)
+{
+#>
+                checked
+                {
+                    foreach await (var item in source.ConfigureAwait(false))
+                    {
+                        token.ThrowIfCancellationRequested();
+
+                        if (item.HasValue)
+                        {
+                            sum += item.GetValueOrDefault();
+                        }
+                    }
+                }
+<#
+}
+else
+{
+#>
+                foreach await (var item in source.ConfigureAwait(false))
+                {
+                    token.ThrowIfCancellationRequested();
+
+                    if (item.HasValue)
+                    {
+                        sum += item.GetValueOrDefault();
+                    }
+                }
+<#
+}
+#>
+
+                return <#= t.ResultType != t.AccumulatorType ? "(" + t.ResultType + "?)" : ""#>sum;
+            }
+        }
+
+<#
+}
+#>
+<#
+foreach (var t in new[] { "int", "long", "float", "double", "decimal", "int?", "long?", "float?", "double?", "decimal?" })
+{
+#>
+        public static Task<<#=t#>> SumAsync<TSource>(this IAsyncEnumerable<TSource> source, Func<TSource, <#=t#>> selector, CancellationToken token = default) => source.Select(selector).SumAsync(token);
+
+        public static Task<<#=t#>> SumAsync<TSource>(this IAsyncEnumerable<TSource> source, Func<TSource, ValueTask<<#=t#>>> selector, CancellationToken token = default) => source.Select(selector).SumAsync(token);
+
+<#
+}
+#>
+    }
+}

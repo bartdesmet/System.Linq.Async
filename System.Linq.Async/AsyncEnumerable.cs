@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace System.Linq.Async
 {
-    public static class AsyncEnumerable
+    public static partial class AsyncEnumerable
     {
         public static Task<TSource> AggregateAsync<TSource>(this IAsyncEnumerable<TSource> source, Func<TSource, TSource, TSource> func, CancellationToken token = default)
         {
@@ -353,7 +353,6 @@ namespace System.Linq.Async
 
         public static IAsyncEnumerable<TSource> AsyncAsyncEnumerable<TSource>(this IAsyncEnumerable<TSource> source) => source;
 
-        // Average
         // Cast?
 
         public static IAsyncEnumerable<TSource> Concat<TSource>(this IAsyncEnumerable<TSource> first, IAsyncEnumerable<TSource> second)
@@ -1175,8 +1174,124 @@ namespace System.Linq.Async
             }
         }
 
-        // Max
-        // Min
+        public static Task<TSource> MaxAsync<TSource>(this IAsyncEnumerable<TSource> source, CancellationToken token = default)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+
+            return Core();
+
+            async Task<TSource> Core()
+            {
+                var comparer = Comparer<TSource>.Default;
+
+                var max = default(TSource);
+
+                if (max == null)
+                {
+                    foreach await (var item in source.ConfigureAwait(false))
+                    {
+                        if (item != null && (max == null || comparer.Compare(item, max) > 0))
+                        {
+                            max = item;
+                        }
+                    }
+
+                    return max;
+                }
+                else
+                {
+                    var hasValue = false;
+
+                    foreach await (var item in source.ConfigureAwait(false))
+                    {
+                        if (hasValue)
+                        {
+                            if (comparer.Compare(item, max) > 0)
+                            {
+                                max = item;
+                            }
+                        }
+                        else
+                        {
+                            max = item;
+                            hasValue = true;
+                        }
+                    }
+
+                    if (hasValue)
+                    {
+                        return max;
+                    }
+                }
+
+                throw new InvalidOperationException();
+            }
+        }
+
+        public static Task<TResult> MaxAsync<TSource, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, TResult> selector, CancellationToken token = default) => source.Select(selector).MaxAsync(token);
+
+        public static Task<TResult> MaxAsync<TSource, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, ValueTask<TResult>> selector, CancellationToken token = default) => source.Select(selector).MaxAsync(token);
+
+        public static Task<TSource> MinAsync<TSource>(this IAsyncEnumerable<TSource> source, CancellationToken token = default)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+
+            return Core();
+
+            async Task<TSource> Core()
+            {
+                var comparer = Comparer<TSource>.Default;
+
+                var min = default(TSource);
+
+                if (min == null)
+                {
+                    foreach await (var item in source.ConfigureAwait(false))
+                    {
+                        if (item != null && (min == null || comparer.Compare(item, min) < 0))
+                        {
+                            min = item;
+                        }
+                    }
+
+                    return min;
+                }
+                else
+                {
+                    var hasValue = false;
+
+                    foreach await (var item in source.ConfigureAwait(false))
+                    {
+                        if (hasValue)
+                        {
+                            if (comparer.Compare(item, min) < 0)
+                            {
+                                min = item;
+                            }
+                        }
+                        else
+                        {
+                            min = item;
+                            hasValue = true;
+                        }
+                    }
+
+                    if (hasValue)
+                    {
+                        return min;
+                    }
+                }
+
+                throw new InvalidOperationException();
+            }
+        }
+
+        public static Task<TResult> MinAsync<TSource, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, TResult> selector, CancellationToken token = default) => source.Select(selector).MinAsync(token);
+
+        public static Task<TResult> MinAsync<TSource, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, ValueTask<TResult>> selector, CancellationToken token = default) => source.Select(selector).MinAsync(token);
+
         // OfType?
         // OrderBy[Descending]
 
@@ -1225,7 +1340,7 @@ namespace System.Linq.Async
             }
         }
 
-        public static IAsyncEnumerable<TResult> Select<TSource, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, bool> selector)
+        public static IAsyncEnumerable<TResult> Select<TSource, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, TResult> selector)
         {
             if (source == null)
                 throw new ArgumentNullException(nameof(source));
@@ -1243,7 +1358,7 @@ namespace System.Linq.Async
             }
         }
 
-        public static IAsyncEnumerable<TResult> Select<TSource, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, ValueTask<bool>> selector)
+        public static IAsyncEnumerable<TResult> Select<TSource, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, ValueTask<TResult>> selector)
         {
             if (source == null)
                 throw new ArgumentNullException(nameof(source));
@@ -1408,7 +1523,7 @@ namespace System.Linq.Async
             {
                 token.ThrowIfCancellationRequested();
 
-                var flag = false;
+                long count = 0;
                 TSource result = default;
 
                 foreach await (var item in source.ConfigureAwait(false))
@@ -1417,22 +1532,17 @@ namespace System.Linq.Async
 
                     if (predicate(item))
                     {
-                        if (flag)
-                        {
-                            throw new InvalidOperationException();
-                        }
-
-                        flag = true;
                         result = item;
+                        checked { count++; }
                     }
                 }
 
-                if (!flag)
+                if (count == 1)
                 {
-                    throw new InvalidOperationException();
+                    return result;
                 }
 
-                return result;
+                throw new InvalidOperationException();
             }
         }
 
@@ -1449,7 +1559,7 @@ namespace System.Linq.Async
             {
                 token.ThrowIfCancellationRequested();
 
-                var flag = false;
+                long count = 0;
                 TSource result = default;
 
                 foreach await (var item in source.ConfigureAwait(false))
@@ -1458,22 +1568,17 @@ namespace System.Linq.Async
 
                     if (await predicate(item).ConfigureAwait(false))
                     {
-                        if (flag)
-                        {
-                            throw new InvalidOperationException();
-                        }
-
-                        flag = true;
                         result = item;
+                        checked { count++; }
                     }
                 }
 
-                if (!flag)
+                if (count == 1)
                 {
-                    throw new InvalidOperationException();
+                    return result;
                 }
 
-                return result;
+                throw new InvalidOperationException();
             }
         }
 
@@ -1525,7 +1630,7 @@ namespace System.Linq.Async
             {
                 token.ThrowIfCancellationRequested();
 
-                var flag = false;
+                long count = 0;
                 TSource result = default;
 
                 foreach await (var item in source.ConfigureAwait(false))
@@ -1534,14 +1639,14 @@ namespace System.Linq.Async
 
                     if (predicate(item))
                     {
-                        if (flag)
-                        {
-                            throw new InvalidOperationException();
-                        }
-
-                        flag = true;
                         result = item;
+                        checked { count++; }
                     }
+                }
+
+                if (count > 1)
+                {
+                    throw new InvalidOperationException();
                 }
 
                 return result;
@@ -1561,7 +1666,7 @@ namespace System.Linq.Async
             {
                 token.ThrowIfCancellationRequested();
 
-                var flag = false;
+                long count = 0;
                 TSource result = default;
 
                 foreach await (var item in source.ConfigureAwait(false))
@@ -1570,14 +1675,14 @@ namespace System.Linq.Async
 
                     if (await predicate(item).ConfigureAwait(false))
                     {
-                        if (flag)
-                        {
-                            throw new InvalidOperationException();
-                        }
-
-                        flag = true;
                         result = item;
+                        checked { count++; }
                     }
+                }
+
+                if (count > 1)
+                {
+                    throw new InvalidOperationException();
                 }
 
                 return result;
@@ -1730,8 +1835,6 @@ namespace System.Linq.Async
                 }
             }
         }
-
-        // Sum
 
         public static IAsyncEnumerable<TSource> Take<TSource>(this IAsyncEnumerable<TSource> source, int count)
         {

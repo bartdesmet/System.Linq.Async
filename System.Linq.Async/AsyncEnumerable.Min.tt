@@ -1,0 +1,152 @@
+﻿<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ output extension=".cs" #>
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace System.Linq.Async
+{
+    public static partial class AsyncEnumerable
+    {
+<#
+foreach (var t in new[]
+{
+    "int",
+    "long",
+    "float",
+    "double",
+    "decimal",
+})
+{
+    var nanCheck = "";
+    if (t == "float" || t == "double")
+    {
+        nanCheck = " || " + t + ".IsNaN(item)";
+    }
+#>
+        public static Task<<#=t#>> MinAsync(this IAsyncEnumerable<<#=t#>> source, CancellationToken token = default)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+
+            return Core();
+
+            async Task<<#=t#>> Core()
+            {
+                token.ThrowIfCancellationRequested();
+
+                <#=t#> min = default;
+                bool hasValue = false;
+
+                foreach await (var item in source.ConfigureAwait(false))
+                {
+                    token.ThrowIfCancellationRequested();
+
+                    if (hasValue)
+                    {
+                        if (item < min<#=nanCheck#>)
+                        {
+                            min = item;
+                        }
+                    }
+                    else
+                    {
+                        hasValue = true;
+                        min = item;
+                    }
+                }
+
+                if (!hasValue)
+                {
+                    throw new InvalidOperationException();
+                }
+
+                return min;
+            }
+        }
+
+<#
+}
+#>
+<#
+foreach (var t in new[]
+{
+    "int",
+    "long",
+    "float",
+    "double",
+    "decimal",
+})
+{
+#>
+        public static Task<<#=t#>?> MinAsync(this IAsyncEnumerable<<#=t#>?> source, CancellationToken token = default)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+
+            return Core();
+
+            async Task<<#=t#>?> Core()
+            {
+                token.ThrowIfCancellationRequested();
+
+                <#=t#>? min = default;
+
+                foreach await (var item in source.ConfigureAwait(false))
+                {
+                    token.ThrowIfCancellationRequested();
+
+<#
+if (t == "float" || t == "double")
+{
+#>
+                    if (item.HasValue && (!min.HasValue || item < min || <#=t#>.IsNaN(item.Value)))
+<#
+}
+else
+{
+#>
+                    if (!min.HasValue || item < min)
+<#
+}
+#>
+                    {
+                        min = item;
+                    }
+                }
+
+                return min;
+            }
+        }
+
+<#
+}
+#>
+<#
+foreach (var t in new[]
+{
+    "int",
+    "long",
+    "float",
+    "double",
+    "decimal",
+})
+{
+#>
+        public static Task<<#=t#>> MinAsync<TSource>(this IAsyncEnumerable<TSource> source, Func<TSource, <#=t#>> selector, CancellationToken token = default) => source.Select(selector).MinAsync(token);
+
+        public static Task<<#=t#>> MinAsync<TSource>(this IAsyncEnumerable<TSource> source, Func<TSource, ValueTask<<#=t#>>> selector, CancellationToken token = default) => source.Select(selector).MinAsync(token);
+
+        public static Task<<#=t#>?> MinAsync<TSource>(this IAsyncEnumerable<TSource> source, Func<TSource, <#=t#>?> selector, CancellationToken token = default) => source.Select(selector).MinAsync(token);
+
+        public static Task<<#=t#>?> MinAsync<TSource>(this IAsyncEnumerable<TSource> source, Func<TSource, ValueTask<<#=t#>?>> selector, CancellationToken token = default) => source.Select(selector).MinAsync(token);
+
+<#
+}
+#>
+    }
+}

@@ -1,0 +1,183 @@
+﻿<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ output extension=".cs" #>
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace System.Linq.Async
+{
+    public static partial class AsyncEnumerable
+    {
+<#
+foreach (var t in new[]
+{
+    new { SourceType = "int", ResultType = "double", AccumulatorType = "long", Division = "(double)sum / (double)count", Zero = "0L", Checked = true },
+    new { SourceType = "long", ResultType = "double", AccumulatorType = "long", Division = "(double)sum / (double)count", Zero = "0L", Checked = true },
+    new { SourceType = "float", ResultType = "float", AccumulatorType = "double", Division = "(float)((double)sum / (double)count)", Zero = "0.0", Checked = false },
+    new { SourceType = "double", ResultType = "double", AccumulatorType = "double", Division = "(double)sum / (double)count", Zero = "0.0", Checked = false },
+    new { SourceType = "decimal", ResultType = "decimal", AccumulatorType = "decimal", Division = "sum / count", Zero = "0.0m", Checked = true },
+})
+{
+#>
+        public static Task<<#=t.ResultType#>> AverageAsync(this IAsyncEnumerable<<#=t.SourceType#>> source, CancellationToken token = default)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+
+            return Core();
+
+            async Task<<#=t.ResultType#>> Core()
+            {
+                token.ThrowIfCancellationRequested();
+
+                <#=t.AccumulatorType#> sum = <#=t.Zero#>;
+                long count = 0L;
+
+<#
+if (t.Checked)
+{
+#>
+                checked
+                {
+                    foreach await (var item in source.ConfigureAwait(false))
+                    {
+                        token.ThrowIfCancellationRequested();
+
+                        sum += item;
+                        count++;
+                    }
+                }
+<#
+}
+else
+{
+#>
+                foreach await (var item in source.ConfigureAwait(false))
+                {
+                    token.ThrowIfCancellationRequested();
+
+                    sum += item;
+                    checked { count++; }
+                }
+<#
+}
+#>
+
+                if (count > 0L)
+                {
+                    return <#=t.Division#>;
+                }
+                else
+                {
+                    throw new InvalidOperationException();
+                }
+            }
+        }
+
+<#
+}
+#>
+<#
+foreach (var t in new[]
+{
+    new { SourceType = "int", ResultType = "double", AccumulatorType = "long", Division = "(double)sum / (double)count", Zero = "0L", Checked = true },
+    new { SourceType = "long", ResultType = "double", AccumulatorType = "long", Division = "(double)sum / (double)count", Zero = "0L", Checked = true },
+    new { SourceType = "float", ResultType = "float", AccumulatorType = "double", Division = "(float)((double)sum / (double)count)", Zero = "0.0", Checked = false },
+    new { SourceType = "double", ResultType = "double", AccumulatorType = "double", Division = "(double)sum / (double)count", Zero = "0.0", Checked = false },
+    new { SourceType = "decimal", ResultType = "decimal", AccumulatorType = "decimal", Division = "sum / count", Zero = "0.0m", Checked = true },
+})
+{
+#>
+        public static Task<<#=t.ResultType#>?> AverageAsync(this IAsyncEnumerable<<#=t.SourceType#>?> source, CancellationToken token = default)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+
+            return Core();
+
+            async Task<<#=t.ResultType#>?> Core()
+            {
+                token.ThrowIfCancellationRequested();
+
+                <#=t.AccumulatorType#> sum = <#=t.Zero#>;
+                long count = 0L;
+
+<#
+if (t.Checked)
+{
+#>
+                checked
+                {
+                    foreach await (var item in source.ConfigureAwait(false))
+                    {
+                        token.ThrowIfCancellationRequested();
+
+                        if (item.HasValue)
+                        {
+                            sum += item.GetValueOrDefault();
+                            count++;
+                        }
+                    }
+                }
+<#
+}
+else
+{
+#>
+                foreach await (var item in source.ConfigureAwait(false))
+                {
+                    token.ThrowIfCancellationRequested();
+
+                    if (item.HasValue)
+                    {
+                        sum += item.GetValueOrDefault();
+                        checked { count++; }
+                    }
+                }
+<#
+}
+#>
+                
+                if (count > 0L)
+                {
+                    return <#=t.Division#>;
+                }
+                else
+                {
+                    throw new InvalidOperationException();
+                }
+            }
+        }
+
+<#
+}
+#>
+<#
+foreach (var t in new[]
+{
+    new { SourceType = "int", ResultType = "double" },
+    new { SourceType = "long", ResultType = "double" },
+    new { SourceType = "float", ResultType = "float" },
+    new { SourceType = "double", ResultType = "double" },
+    new { SourceType = "decimal", ResultType = "decimal" },
+    new { SourceType = "int?", ResultType = "double?" },
+    new { SourceType = "long?", ResultType = "double?" },
+    new { SourceType = "float?", ResultType = "float?" },
+    new { SourceType = "double?", ResultType = "double?" },
+    new { SourceType = "decimal?", ResultType = "decimal?" },
+})
+{
+#>
+        public static Task<<#=t.ResultType#>> AverageAsync<TSource>(this IAsyncEnumerable<TSource> source, Func<TSource, <#=t.SourceType#>> selector, CancellationToken token = default) => source.Select(selector).AverageAsync(token);
+
+        public static Task<<#=t.ResultType#>> AverageAsync<TSource>(this IAsyncEnumerable<TSource> source, Func<TSource, ValueTask<<#=t.SourceType#>>> selector, CancellationToken token = default) => source.Select(selector).AverageAsync(token);
+
+<#
+}
+#>
+    }
+}

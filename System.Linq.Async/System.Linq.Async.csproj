@@ -13,7 +13,76 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="AsyncEnumerable.Max.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>AsyncEnumerable.Max.tt</DependentUpon>
+    </None>
+    <None Include="AsyncEnumerable.Min.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>AsyncEnumerable.Min.tt</DependentUpon>
+    </None>
+    <None Include="AsyncEnumerable.Sum.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>AsyncEnumerable.Sum.tt</DependentUpon>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="AsyncEnumerable.Average.tt">
+      <LastGenOutput>AsyncEnumerable.Average.cs</LastGenOutput>
+      <Generator>TextTemplatingFileGenerator</Generator>
+    </None>
+    <None Update="AsyncEnumerable.Max.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>AsyncEnumerable.Max.cs</LastGenOutput>
+    </None>
+    <None Update="AsyncEnumerable.Min.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>AsyncEnumerable.Min.cs</LastGenOutput>
+    </None>
+    <None Update="AsyncEnumerable.Sum.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>AsyncEnumerable.Sum.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="AsyncEnumerable.Average.cs">
+      <DependentUpon>AsyncEnumerable - Copy.Sum.tt</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="AsyncEnumerable.Average.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>AsyncEnumerable.Average.tt</DependentUpon>
+    </Compile>
+    <Compile Update="AsyncEnumerable.Max.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>AsyncEnumerable.Max.tt</DependentUpon>
+    </Compile>
+    <Compile Update="AsyncEnumerable.Min.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>AsyncEnumerable.Min.tt</DependentUpon>
+    </Compile>
+    <Compile Update="AsyncEnumerable.Sum.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>AsyncEnumerable.Sum.tt</DependentUpon>
+    </Compile>
   </ItemGroup>
 
 </Project>
