@@ -353,8 +353,6 @@ namespace System.Linq.Async
 
         public static IAsyncEnumerable<TSource> AsyncAsyncEnumerable<TSource>(this IAsyncEnumerable<TSource> source) => source;
 
-        // Cast?
-
         public static IAsyncEnumerable<TSource> Concat<TSource>(this IAsyncEnumerable<TSource> first, IAsyncEnumerable<TSource> second)
         {
             if (first == null)
@@ -1292,7 +1290,6 @@ namespace System.Linq.Async
 
         public static Task<TResult> MinAsync<TSource, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, ValueTask<TResult>> selector, CancellationToken token = default) => source.Select(selector).MinAsync(token);
 
-        // OfType?
         // OrderBy[Descending]
 
         public static IAsyncEnumerable<TSource> Prepend<TSource>(this IAsyncEnumerable<TSource> source, TSource element)
@@ -1416,7 +1413,565 @@ namespace System.Linq.Async
             }
         }
 
-        // SelectMany
+        public static IAsyncEnumerable<TResult> SelectMany<TSource, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, IAsyncEnumerable<TResult>> selector)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+            if (selector == null)
+                throw new ArgumentNullException(nameof(selector));
+
+            return Iterator();
+
+            async IAsyncEnumerable<TResult> Iterator()
+            {
+                foreach await (var outer in source.ConfigureAwait(false))
+                {
+                    foreach await (var inner in selector(outer).ConfigureAwait(false))
+                    {
+                        yield return inner;
+                    }
+                }
+            }
+        }
+
+        public static IAsyncEnumerable<TResult> SelectMany<TSource, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, int, IAsyncEnumerable<TResult>> selector)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+            if (selector == null)
+                throw new ArgumentNullException(nameof(selector));
+
+            return Iterator();
+
+            async IAsyncEnumerable<TResult> Iterator()
+            {
+                var index = 0;
+
+                foreach await (var outer in source.ConfigureAwait(false))
+                {
+                    foreach await (var inner in selector(outer, checked(index++)).ConfigureAwait(false))
+                    {
+                        yield return inner;
+                    }
+                }
+            }
+        }
+
+        public static IAsyncEnumerable<TResult> SelectMany<TSource, TCollection, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, IAsyncEnumerable<TCollection>> collectionSelector, Func<TSource, TCollection, TResult> resultSelector)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+            if (collectionSelector == null)
+                throw new ArgumentNullException(nameof(collectionSelector));
+            if (resultSelector == null)
+                throw new ArgumentNullException(nameof(resultSelector));
+
+            return Iterator();
+
+            async IAsyncEnumerable<TResult> Iterator()
+            {
+                foreach await (var outer in source.ConfigureAwait(false))
+                {
+                    foreach await (var inner in collectionSelector(outer).ConfigureAwait(false))
+                    {
+                        yield return resultSelector(outer, inner);
+                    }
+                }
+            }
+        }
+
+        public static IAsyncEnumerable<TResult> SelectMany<TSource, TCollection, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, int, IAsyncEnumerable<TCollection>> collectionSelector, Func<TSource, TCollection, TResult> resultSelector)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+            if (collectionSelector == null)
+                throw new ArgumentNullException(nameof(collectionSelector));
+            if (resultSelector == null)
+                throw new ArgumentNullException(nameof(resultSelector));
+
+            return Iterator();
+
+            async IAsyncEnumerable<TResult> Iterator()
+            {
+                var index = 0;
+
+                foreach await (var outer in source.ConfigureAwait(false))
+                {
+                    foreach await (var inner in collectionSelector(outer, checked(index++)).ConfigureAwait(false))
+                    {
+                        yield return resultSelector(outer, inner);
+                    }
+                }
+            }
+        }
+
+        public static IAsyncEnumerable<TResult> SelectMany<TSource, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, IEnumerable<TResult>> selector)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+            if (selector == null)
+                throw new ArgumentNullException(nameof(selector));
+
+            return Iterator();
+
+            async IAsyncEnumerable<TResult> Iterator()
+            {
+                foreach await (var outer in source.ConfigureAwait(false))
+                {
+                    foreach (var inner in selector(outer))
+                    {
+                        yield return inner;
+                    }
+                }
+            }
+        }
+
+        public static IAsyncEnumerable<TResult> SelectMany<TSource, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, int, IEnumerable<TResult>> selector)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+            if (selector == null)
+                throw new ArgumentNullException(nameof(selector));
+
+            return Iterator();
+
+            async IAsyncEnumerable<TResult> Iterator()
+            {
+                var index = 0;
+
+                foreach await (var outer in source.ConfigureAwait(false))
+                {
+                    foreach (var inner in selector(outer, checked(index++)))
+                    {
+                        yield return inner;
+                    }
+                }
+            }
+        }
+
+        public static IAsyncEnumerable<TResult> SelectMany<TSource, TCollection, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, IEnumerable<TCollection>> collectionSelector, Func<TSource, TCollection, TResult> resultSelector)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+            if (collectionSelector == null)
+                throw new ArgumentNullException(nameof(collectionSelector));
+            if (resultSelector == null)
+                throw new ArgumentNullException(nameof(resultSelector));
+
+            return Iterator();
+
+            async IAsyncEnumerable<TResult> Iterator()
+            {
+                foreach await (var outer in source.ConfigureAwait(false))
+                {
+                    foreach (var inner in collectionSelector(outer))
+                    {
+                        yield return resultSelector(outer, inner);
+                    }
+                }
+            }
+        }
+
+        public static IAsyncEnumerable<TResult> SelectMany<TSource, TCollection, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, int, IEnumerable<TCollection>> collectionSelector, Func<TSource, TCollection, TResult> resultSelector)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+            if (collectionSelector == null)
+                throw new ArgumentNullException(nameof(collectionSelector));
+            if (resultSelector == null)
+                throw new ArgumentNullException(nameof(resultSelector));
+
+            return Iterator();
+
+            async IAsyncEnumerable<TResult> Iterator()
+            {
+                var index = 0;
+
+                foreach await (var outer in source.ConfigureAwait(false))
+                {
+                    foreach (var inner in collectionSelector(outer, checked(index++)))
+                    {
+                        yield return resultSelector(outer, inner);
+                    }
+                }
+            }
+        }
+
+        public static IAsyncEnumerable<TResult> SelectMany<TSource, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, Task<IAsyncEnumerable<TResult>>> selector)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+            if (selector == null)
+                throw new ArgumentNullException(nameof(selector));
+
+            return Iterator();
+
+            async IAsyncEnumerable<TResult> Iterator()
+            {
+                foreach await (var outer in source.ConfigureAwait(false))
+                {
+                    foreach await (var inner in (await selector(outer).ConfigureAwait(false)).ConfigureAwait(false))
+                    {
+                        yield return inner;
+                    }
+                }
+            }
+        }
+
+        public static IAsyncEnumerable<TResult> SelectMany<TSource, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, int, Task<IAsyncEnumerable<TResult>>> selector)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+            if (selector == null)
+                throw new ArgumentNullException(nameof(selector));
+
+            return Iterator();
+
+            async IAsyncEnumerable<TResult> Iterator()
+            {
+                var index = 0;
+
+                foreach await (var outer in source.ConfigureAwait(false))
+                {
+                    foreach await (var inner in (await selector(outer, checked(index++)).ConfigureAwait(false)).ConfigureAwait(false))
+                    {
+                        yield return inner;
+                    }
+                }
+            }
+        }
+
+        public static IAsyncEnumerable<TResult> SelectMany<TSource, TCollection, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, Task<IAsyncEnumerable<TCollection>>> collectionSelector, Func<TSource, TCollection, TResult> resultSelector)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+            if (collectionSelector == null)
+                throw new ArgumentNullException(nameof(collectionSelector));
+            if (resultSelector == null)
+                throw new ArgumentNullException(nameof(resultSelector));
+
+            return Iterator();
+
+            async IAsyncEnumerable<TResult> Iterator()
+            {
+                foreach await (var outer in source.ConfigureAwait(false))
+                {
+                    foreach await (var inner in (await collectionSelector(outer).ConfigureAwait(false)).ConfigureAwait(false))
+                    {
+                        yield return resultSelector(outer, inner);
+                    }
+                }
+            }
+        }
+
+        public static IAsyncEnumerable<TResult> SelectMany<TSource, TCollection, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, int, Task<IAsyncEnumerable<TCollection>>> collectionSelector, Func<TSource, TCollection, TResult> resultSelector)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+            if (collectionSelector == null)
+                throw new ArgumentNullException(nameof(collectionSelector));
+            if (resultSelector == null)
+                throw new ArgumentNullException(nameof(resultSelector));
+
+            return Iterator();
+
+            async IAsyncEnumerable<TResult> Iterator()
+            {
+                var index = 0;
+
+                foreach await (var outer in source.ConfigureAwait(false))
+                {
+                    foreach await (var inner in (await collectionSelector(outer, checked(index++)).ConfigureAwait(false)).ConfigureAwait(false))
+                    {
+                        yield return resultSelector(outer, inner);
+                    }
+                }
+            }
+        }
+
+        public static IAsyncEnumerable<TResult> SelectMany<TSource, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, Task<IEnumerable<TResult>>> selector)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+            if (selector == null)
+                throw new ArgumentNullException(nameof(selector));
+
+            return Iterator();
+
+            async IAsyncEnumerable<TResult> Iterator()
+            {
+                foreach await (var outer in source.ConfigureAwait(false))
+                {
+                    foreach (var inner in await selector(outer).ConfigureAwait(false))
+                    {
+                        yield return inner;
+                    }
+                }
+            }
+        }
+
+        public static IAsyncEnumerable<TResult> SelectMany<TSource, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, int, Task<IEnumerable<TResult>>> selector)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+            if (selector == null)
+                throw new ArgumentNullException(nameof(selector));
+
+            return Iterator();
+
+            async IAsyncEnumerable<TResult> Iterator()
+            {
+                var index = 0;
+
+                foreach await (var outer in source.ConfigureAwait(false))
+                {
+                    foreach (var inner in await selector(outer, checked(index++)).ConfigureAwait(false))
+                    {
+                        yield return inner;
+                    }
+                }
+            }
+        }
+
+        public static IAsyncEnumerable<TResult> SelectMany<TSource, TCollection, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, Task<IEnumerable<TCollection>>> collectionSelector, Func<TSource, TCollection, TResult> resultSelector)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+            if (collectionSelector == null)
+                throw new ArgumentNullException(nameof(collectionSelector));
+            if (resultSelector == null)
+                throw new ArgumentNullException(nameof(resultSelector));
+
+            return Iterator();
+
+            async IAsyncEnumerable<TResult> Iterator()
+            {
+                foreach await (var outer in source.ConfigureAwait(false))
+                {
+                    foreach (var inner in await collectionSelector(outer).ConfigureAwait(false))
+                    {
+                        yield return resultSelector(outer, inner);
+                    }
+                }
+            }
+        }
+
+        public static IAsyncEnumerable<TResult> SelectMany<TSource, TCollection, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, int, Task<IEnumerable<TCollection>>> collectionSelector, Func<TSource, TCollection, TResult> resultSelector)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+            if (collectionSelector == null)
+                throw new ArgumentNullException(nameof(collectionSelector));
+            if (resultSelector == null)
+                throw new ArgumentNullException(nameof(resultSelector));
+
+            return Iterator();
+
+            async IAsyncEnumerable<TResult> Iterator()
+            {
+                var index = 0;
+
+                foreach await (var outer in source.ConfigureAwait(false))
+                {
+                    foreach (var inner in await collectionSelector(outer, checked(index++)).ConfigureAwait(false))
+                    {
+                        yield return resultSelector(outer, inner);
+                    }
+                }
+            }
+        }
+
+        public static IAsyncEnumerable<TResult> SelectMany<TSource, TCollection, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, IAsyncEnumerable<TCollection>> collectionSelector, Func<TSource, TCollection, ValueTask<TResult>> resultSelector)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+            if (collectionSelector == null)
+                throw new ArgumentNullException(nameof(collectionSelector));
+            if (resultSelector == null)
+                throw new ArgumentNullException(nameof(resultSelector));
+
+            return Iterator();
+
+            async IAsyncEnumerable<TResult> Iterator()
+            {
+                foreach await (var outer in source.ConfigureAwait(false))
+                {
+                    foreach await (var inner in collectionSelector(outer).ConfigureAwait(false))
+                    {
+                        yield return resultSelector(outer, inner).ConfigureAwait(false);
+                    }
+                }
+            }
+        }
+
+        public static IAsyncEnumerable<TResult> SelectMany<TSource, TCollection, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, int, IAsyncEnumerable<TCollection>> collectionSelector, Func<TSource, TCollection, ValueTask<TResult>> resultSelector)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+            if (collectionSelector == null)
+                throw new ArgumentNullException(nameof(collectionSelector));
+            if (resultSelector == null)
+                throw new ArgumentNullException(nameof(resultSelector));
+
+            return Iterator();
+
+            async IAsyncEnumerable<TResult> Iterator()
+            {
+                var index = 0;
+
+                foreach await (var outer in source.ConfigureAwait(false))
+                {
+                    foreach await (var inner in collectionSelector(outer, checked(index++)).ConfigureAwait(false))
+                    {
+                        yield return resultSelector(outer, inner).ConfigureAwait(false);
+                    }
+                }
+            }
+        }
+
+        public static IAsyncEnumerable<TResult> SelectMany<TSource, TCollection, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, IEnumerable<TCollection>> collectionSelector, Func<TSource, TCollection, ValueTask<TResult>> resultSelector)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+            if (collectionSelector == null)
+                throw new ArgumentNullException(nameof(collectionSelector));
+            if (resultSelector == null)
+                throw new ArgumentNullException(nameof(resultSelector));
+
+            return Iterator();
+
+            async IAsyncEnumerable<TResult> Iterator()
+            {
+                foreach await (var outer in source.ConfigureAwait(false))
+                {
+                    foreach (var inner in collectionSelector(outer))
+                    {
+                        yield return resultSelector(outer, inner).ConfigureAwait(false);
+                    }
+                }
+            }
+        }
+
+        public static IAsyncEnumerable<TResult> SelectMany<TSource, TCollection, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, int, IEnumerable<TCollection>> collectionSelector, Func<TSource, TCollection, ValueTask<TResult>> resultSelector)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+            if (collectionSelector == null)
+                throw new ArgumentNullException(nameof(collectionSelector));
+            if (resultSelector == null)
+                throw new ArgumentNullException(nameof(resultSelector));
+
+            return Iterator();
+
+            async IAsyncEnumerable<TResult> Iterator()
+            {
+                var index = 0;
+
+                foreach await (var outer in source.ConfigureAwait(false))
+                {
+                    foreach (var inner in collectionSelector(outer, checked(index++)))
+                    {
+                        yield return resultSelector(outer, inner).ConfigureAwait(false);
+                    }
+                }
+            }
+        }
+
+        public static IAsyncEnumerable<TResult> SelectMany<TSource, TCollection, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, Task<IAsyncEnumerable<TCollection>>> collectionSelector, Func<TSource, TCollection, ValueTask<TResult>> resultSelector)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+            if (collectionSelector == null)
+                throw new ArgumentNullException(nameof(collectionSelector));
+            if (resultSelector == null)
+                throw new ArgumentNullException(nameof(resultSelector));
+
+            return Iterator();
+
+            async IAsyncEnumerable<TResult> Iterator()
+            {
+                foreach await (var outer in source.ConfigureAwait(false))
+                {
+                    foreach await (var inner in (await collectionSelector(outer).ConfigureAwait(false)).ConfigureAwait(false))
+                    {
+                        yield return await resultSelector(outer, inner).ConfigureAwait(false);
+                    }
+                }
+            }
+        }
+
+        public static IAsyncEnumerable<TResult> SelectMany<TSource, TCollection, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, int, Task<IAsyncEnumerable<TCollection>>> collectionSelector, Func<TSource, TCollection, ValueTask<TResult>> resultSelector)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+            if (collectionSelector == null)
+                throw new ArgumentNullException(nameof(collectionSelector));
+            if (resultSelector == null)
+                throw new ArgumentNullException(nameof(resultSelector));
+
+            return Iterator();
+
+            async IAsyncEnumerable<TResult> Iterator()
+            {
+                var index = 0;
+
+                foreach await (var outer in source.ConfigureAwait(false))
+                {
+                    foreach await (var inner in (await collectionSelector(outer, checked(index++)).ConfigureAwait(false)).ConfigureAwait(false))
+                    {
+                        yield return await resultSelector(outer, inner).ConfigureAwait(false);
+                    }
+                }
+            }
+        }
+
+        public static IAsyncEnumerable<TResult> SelectMany<TSource, TCollection, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, Task<IEnumerable<TCollection>>> collectionSelector, Func<TSource, TCollection, ValueTask<TResult>> resultSelector)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+            if (collectionSelector == null)
+                throw new ArgumentNullException(nameof(collectionSelector));
+            if (resultSelector == null)
+                throw new ArgumentNullException(nameof(resultSelector));
+
+            return Iterator();
+
+            async IAsyncEnumerable<TResult> Iterator()
+            {
+                foreach await (var outer in source.ConfigureAwait(false))
+                {
+                    foreach (var inner in await collectionSelector(outer).ConfigureAwait(false))
+                    {
+                        yield return await resultSelector(outer, inner).ConfigureAwait(false);
+                    }
+                }
+            }
+        }
+
+        public static IAsyncEnumerable<TResult> SelectMany<TSource, TCollection, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, int, Task<IEnumerable<TCollection>>> collectionSelector, Func<TSource, TCollection, ValueTask<TResult>> resultSelector)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+            if (collectionSelector == null)
+                throw new ArgumentNullException(nameof(collectionSelector));
+            if (resultSelector == null)
+                throw new ArgumentNullException(nameof(resultSelector));
+
+            return Iterator();
+
+            async IAsyncEnumerable<TResult> Iterator()
+            {
+                var index = 0;
+
+                foreach await (var outer in source.ConfigureAwait(false))
+                {
+                    foreach (var inner in await collectionSelector(outer, checked(index++)).ConfigureAwait(false))
+                    {
+                        yield return await resultSelector(outer, inner).ConfigureAwait(false);
+                    }
+                }
+            }
+        }
 
         public static Task<bool> SequenceEqualAsync<TSource>(this IAsyncEnumerable<TSource> first, IAsyncEnumerable<TSource> second, CancellationToken token = default)
         {
